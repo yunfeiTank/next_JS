@@ -1,0 +1,1 @@
+export default () => <div>关于界面</div>
