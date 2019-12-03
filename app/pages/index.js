@@ -1,15 +1,30 @@
-import React, { Component } from "react";
-import '../assets/index.less';
-export default class Index extends Component {
-    componentDidMount() {
-        console.log("加载完成")
-    }
-    render() {
-        return (
-            <div>
-                <div>welcome to next!!!</div>
-                <div className='example'>家居</div>
-            </div>
-        )
-    }
+import React from 'react'
+import {connect} from 'react-redux'
+import {startClock, serverRenderClock} from '../store'
+import Examples from '../components/examples'
+
+class Index extends React.Component {
+  static getInitialProps ({ reduxStore, req }) {
+    const isServer = !!req
+    reduxStore.dispatch(serverRenderClock(isServer))
+
+    return {}
+  }
+
+  componentDidMount () {
+    const {dispatch} = this.props
+    this.timer = startClock(dispatch)
+  }
+
+  componentWillUnmount () {
+    clearInterval(this.timer)
+  }
+
+  render () {
+    return (
+      <Examples />
+    )
+  }
 }
+
+export default connect()(Index)
