@@ -1,1 +1,0 @@
-export default ()=> <div>Hello 哈哈哈2！！！</div>
