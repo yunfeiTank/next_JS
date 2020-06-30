@@ -1,42 +1,43 @@
 const Koa = require('koa')
 const next = require('next')
 const Router = require('koa-router')
-const bodyParser = require('koa-bodyparser')
-const proxy = require('koa2-proxy-middleware')
-const dev = process.env.NODE_ENV !== 'production'  // 名字必须是这一个名字
+const httpProxy = require('http-proxy-middleware')
+const k2c = require('koa2-connect');
+const port = parseInt(process.env.PORT, 10) || 3000
+const dev = process.env.NODE_ENV !== 'production'
 const app = next({ dev })
-const handler = app.getRequestHandler() //
-
-const options = {
-    targets: {
-        '/api2/(.*)': {
-            target: 'https://movie.douban.com',
-            changeOrigin: true,
-            pathRewrite: {
-                '/api2/': '', // rewrite path
-            }
-        }
-    }
-}
-
-app.prepare().then(() => { // 等待页面编译完成
+const handle = app.getRequestHandler()
+app.prepare().then(() => {
     const server = new Koa()
     const router = new Router()
-    server.use(bodyParser())
-    server.use(proxy(options))
+    //配置代理中间件
     server.use(async (ctx, next) => {
-        if (!ctx.url.match(/api2?/) && !ctx.url.match(/j\//)) {
-            await handler(ctx.req, ctx.res) // 等待nextjs执行完成
-            ctx.respond = false
+        if (ctx.url.startsWith('/api2')) { //匹配有api字段的请求url
+            ctx.respond = false // 绕过koa内置对象response ，写入原始res对象，而不是koa处理过的response
+            return await k2c(httpProxy.createProxyMiddleware({
+                target: 'https://movie.douban.com',
+                changeOrigin: true,
+                secure: false,
+                pathRewrite: {
+                    '/api2/': '', // rewrite path
+                }
+            }
+            ))(ctx, next);
         }
-        next()
+        await next()
     })
-    router.get('/api/data', async (ctx, next) => {
-        ctx.body = { a: 1, b: 2 }
-        next()
+    router.all('*', async ctx => {
+        await handle(ctx.req, ctx.res)
+        ctx.respond = false
     })
+
+    server.use(async (ctx, next) => {
+        ctx.res.statusCode = 200
+        await next()
+    })
+
     server.use(router.routes())
-    server.listen(3000, () => {
-        console.log('listen on 3000')
+    server.listen(port, () => {
+        console.log(`> Ready on http://localhost:${port}`)
     })
 })
