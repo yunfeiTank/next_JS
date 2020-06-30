@@ -9,13 +9,17 @@ import qs from 'qs';
 const getData = (url, params = {}) => {
     return fetch(url + qs.stringify(params), {
         credentials: 'same-origin'
-    }).then(res => res.json())
+    }).then(res => res.json()).catch(err => {
+        console.log(err)
+    })
 }
 const postData = (url, params = {}) => {
     return fetch(url, {
         method: 'post',
         data: JSON.stringify(params),
         credentials: 'same-origin'
-    }).then(res => res.json())
+    }).then(res => res.json()).catch(err => {
+        console.log(err)
+    })
 }
 export { getData, postData }

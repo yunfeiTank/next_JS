@@ -1,3 +1,8 @@
+/**
+ * @description: app
+ * @author:yunfei
+ * @time:2020/6/23
+ */
 import React from 'react'
 import App from 'next/app'
 import 'antd/dist/antd.css'
